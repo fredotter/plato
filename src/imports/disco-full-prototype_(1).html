@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disco — Smart Learning Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base:#09080F; --bg-elevated:#111019; --bg-card:#16141F;
+  --bg-card-hover:#1C1A27; --bg-input:#1A1825; --bg-glass:rgba(17,16,25,0.8);
+  --border-dim:rgba(255,255,255,0.05); --border-subtle:rgba(255,255,255,0.08);
+  --border-focus:rgba(167,139,250,0.45);
+  --text-bright:#F5F3FA; --text-primary:#E0DCE8; --text-secondary:#8E87A0; --text-muted:#5C566E;
+  --violet:#A78BFA; --violet-deep:#7C3AED; --violet-soft:rgba(167,139,250,0.12);
+  --violet-glow:rgba(124,58,237,0.2);
+  --emerald:#34D399; --emerald-soft:rgba(52,211,153,0.10);
+  --amber:#FBC02D; --amber-soft:rgba(251,192,45,0.10);
+  --rose:#F472B6; --rose-soft:rgba(244,114,182,0.10);
+  --sky:#60A5FA; --sky-soft:rgba(96,165,250,0.10);
+  --coral:#FB923C; --coral-soft:rgba(251,146,60,0.10);
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:28px; --r-full:999px;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'Outfit',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+  --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-base);color:var(--text-primary);min-height:100vh;overflow-x:hidden;line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:var(--font-body);cursor:pointer}
+code{font-family:var(--font-mono);font-size:.85em;background:rgba(167,139,250,.1);padding:2px 6px;border-radius:4px;color:var(--violet)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07);border-radius:99px}
+a{color:var(--violet);text-decoration:none}
+
+/* Ambient */
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px);opacity:.35}
+.orb.a{width:500px;height:500px;top:-150px;left:-100px;background:var(--violet-glow)}
+.orb.b{width:400px;height:400px;bottom:-100px;right:-80px;background:rgba(52,211,153,.07)}
+
+/* Pages */
+.page{display:none;position:relative;z-index:1;min-height:100vh}
+.page.active{display:flex;flex-direction:column}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes wave{0%,60%,100%{transform:rotate(0)}10%{transform:rotate(14deg)}20%{transform:rotate(-8deg)}30%{transform:rotate(14deg)}40%{transform:rotate(-4deg)}50%{transform:rotate(10deg)}}
+@keyframes barGrow{from{width:0}}
+.anim{animation:fadeUp .55s var(--ease-out) both}
+.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}.d4{animation-delay:.32s}.d5{animation-delay:.4s}.d6{animation-delay:.48s}
+
+/* ═══════════════════════════════════════
+   SHARED COMPONENTS
+   ═══════════════════════════════════════ */
+/* Center card layout used by splash, auth, intro, enrollment, style assess */
+.centered-page{align-items:center;justify-content:center;padding:32px;text-align:center}
+.card-shell{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-xl);padding:40px 36px;max-width:460px;width:100%;animation:scaleIn .5s var(--ease-out) both;position:relative;overflow:hidden}
+.card-shell::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--violet-deep),var(--violet),var(--emerald));border-radius:var(--r-xl) var(--r-xl) 0 0}
+.card-shell.wide{max-width:580px}
+.card-shell.x-wide{max-width:720px}
+
+.logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--violet-deep),var(--violet));display:flex;align-items:center;justify-content:center;font-size:16px;color:white;font-weight:800}
+.logo-word{font-weight:700;font-size:1.3rem;letter-spacing:-.03em}
+
+.card-title{font-family:var(--font-display);font-size:1.45rem;font-weight:700;margin-bottom:6px;letter-spacing:-.01em}
+.card-sub{font-size:.88rem;color:var(--text-secondary);margin-bottom:28px;line-height:1.55}
+
+/* Inputs */
+.input-group{display:flex;flex-direction:column;gap:6px;text-align:left;margin-bottom:16px}
+.input-label{font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.input-field{padding:12px 16px;background:var(--bg-input);border:1px solid var(--border-dim);border-radius:var(--r-sm);color:var(--text-primary);font-family:var(--font-body);font-size:.9rem;transition:border-color .25s;outline:none}
+.input-field:focus{border-color:var(--border-focus)}
+.input-field::placeholder{color:var(--text-muted)}
+
+/* Buttons */
+.btn-primary{width:100%;padding:14px;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--violet-deep),var(--violet));color:white;font-weight:600;font-size:.92rem;transition:all .3s var(--ease-out)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,.3)}
+.btn-primary:disabled{opacity:.4;pointer-events:none;transform:none;box-shadow:none}
+.btn-secondary{width:100%;padding:13px;border:1px solid var(--border-subtle);border-radius:var(--r-md);background:transparent;color:var(--text-primary);font-weight:600;font-size:.88rem;transition:all .25s var(--ease-out)}
+.btn-secondary:hover{border-color:var(--border-focus);background:var(--violet-soft)}
+.btn-ghost{background:none;border:none;color:var(--text-muted);font-size:.82rem;transition:color .2s}
+.btn-ghost:hover{color:var(--violet)}
+
+.link-row{margin-top:18px;font-size:.82rem;color:var(--text-muted)}
+.link-row span{color:var(--violet);cursor:pointer;font-weight:500}
+.link-row span:hover{text-decoration:underline}
+
+/* Pills / Tags */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:var(--r-full);font-size:.72rem;font-weight:600;border:1px solid var(--border-dim);background:var(--bg-input);color:var(--text-secondary);cursor:pointer;transition:all .25s var(--ease-out)}
+.pill:hover{border-color:var(--border-focus);color:var(--violet)}
+.pill.selected{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
+.pill-icon{font-size:14px}
+
+/* Progress indicator */
+.step-dots{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);transition:all .3s}
+.step-dot.active{background:var(--violet);width:24px;border-radius:99px}
+.step-dot.done{background:var(--emerald)}
+
+/* ═══════════════════════════════════════
+   1. SPLASH SCREEN
+   ═══════════════════════════════════════ */
+#pageSplash .splash-inner{display:flex;flex-direction:column;align-items:center;gap:20px}
+.splash-logo{width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,var(--violet-deep),var(--violet));display:flex;align-items:center;justify-content:center;font-size:36px;color:white;font-weight:800;animation:float 3s ease-in-out infinite;box-shadow:0 16px 48px rgba(124,58,237,.25)}
+.splash-title{font-family:var(--font-display);font-size:2.4rem;font-weight:700;letter-spacing:-.02em}
+.splash-tagline{font-size:1rem;color:var(--text-secondary);max-width:360px}
+.splash-btns{display:flex;flex-direction:column;gap:10px;width:280px;margin-top:12px}
+
+/* ═══════════════════════════════════════
+   2. LOGIN / SIGN UP
+   ═══════════════════════════════════════ */
+/* Uses card-shell, input groups, btn-primary */
+
+/* ═══════════════════════════════════════
+   3. INTRODUCTION (Goals)
+   ═══════════════════════════════════════ */
+.goals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.goal-card{padding:14px;border-radius:var(--r-md);border:1px solid var(--border-dim);background:var(--bg-elevated);cursor:pointer;transition:all .25s var(--ease-out);text-align:center}
+.goal-card:hover{border-color:var(--border-focus)}
+.goal-card.selected{border-color:var(--violet);background:var(--violet-soft)}
+.goal-icon{font-size:28px;margin-bottom:6px}
+.goal-label{font-size:.8rem;font-weight:600}
+
+/* ═══════════════════════════════════════
+   4. COURSE ENROLLMENT
+   ═══════════════════════════════════════ */
+.enroll-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;text-align:left}
+.enroll-card{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:var(--r-md);border:1px solid var(--border-dim);background:var(--bg-elevated);cursor:pointer;transition:all .25s var(--ease-out)}
+.enroll-card:hover{border-color:var(--border-focus)}
+.enroll-card.selected{border-color:var(--violet);background:var(--violet-soft)}
+.enroll-emoji{font-size:28px;flex-shrink:0}
+.enroll-info h4{font-size:.88rem;font-weight:600;margin-bottom:2px}
+.enroll-info p{font-size:.72rem;color:var(--text-muted)}
+.enroll-check{margin-left:auto;width:22px;height:22px;border-radius:6px;border:2px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;transition:all .25s;flex-shrink:0}
+.enroll-card.selected .enroll-check{border-color:var(--violet);background:var(--violet-deep);color:white}
+
+/* ═══════════════════════════════════════
+   5. LEARNING STYLE ASSESSMENT
+   ═══════════════════════════════════════ */
+.assess-format-icon{font-size:52px;margin-bottom:12px;animation:float 2.5s ease-in-out infinite}
+.assess-desc{font-size:.85rem;color:var(--text-secondary);margin-bottom:20px;line-height:1.6}
+.assess-content-area{background:var(--bg-elevated);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:20px;margin-bottom:20px;min-height:140px;text-align:left}
+.assess-content-area h4{font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--violet)}
+.assess-content-area p{font-size:.8rem;color:var(--text-secondary);line-height:1.65}
+.assess-content-area .visual-blocks{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.visual-block{width:90px;padding:14px 8px;border-radius:var(--r-sm);border:1px solid var(--border-dim);background:var(--bg-card);text-align:center;font-size:.72rem;color:var(--text-secondary)}
+.visual-block .vb-icon{font-size:24px;margin-bottom:4px}
+.visual-block .vb-label{font-weight:600;color:var(--text-primary)}
+/* Audio waveform */
+.mini-waveform{display:flex;align-items:center;justify-content:center;gap:2.5px;height:36px;margin:12px 0}
+.mini-waveform .bar{width:3px;border-radius:99px;background:var(--violet);opacity:.3;animation:wavePulse 1.2s ease-in-out infinite}
+@keyframes wavePulse{0%,100%{height:8px}50%{height:28px}}
+.mini-waveform .bar:nth-child(1){animation-delay:0s}.mini-waveform .bar:nth-child(2){animation-delay:.1s}.mini-waveform .bar:nth-child(3){animation-delay:.2s}.mini-waveform .bar:nth-child(4){animation-delay:.15s}.mini-waveform .bar:nth-child(5){animation-delay:.25s}.mini-waveform .bar:nth-child(6){animation-delay:.05s}.mini-waveform .bar:nth-child(7){animation-delay:.3s}.mini-waveform .bar:nth-child(8){animation-delay:.12s}
+/* Reading */
+.reading-block{font-size:.78rem;color:var(--text-secondary);line-height:1.75;column-count:2;column-gap:20px}
+/* Kinesthetic */
+.kinesthetic-area{display:flex;flex-direction:column;align-items:center;gap:12px}
+.drag-zone{width:100%;padding:16px;border:2px dashed var(--border-subtle);border-radius:var(--r-md);min-height:60px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.drag-chip{padding:8px 14px;border-radius:var(--r-full);background:var(--violet-soft);color:var(--violet);font-size:.78rem;font-weight:600;cursor:grab;transition:all .2s;border:1px solid rgba(167,139,250,.2)}
+.drag-chip:hover{background:var(--violet-deep);color:white}
+
+/* Quiz panels */
+.quiz-panel{text-align:left}
+.quiz-panel .qp-q{font-family:var(--font-display);font-size:1rem;font-weight:500;margin-bottom:16px;text-align:center}
+.quiz-panel .qp-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.qp-opt{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--border-dim);background:var(--bg-elevated);cursor:pointer;font-size:.85rem;transition:all .25s var(--ease-out)}
+.qp-opt:hover{border-color:var(--border-focus);background:var(--violet-soft)}
+.qp-opt.selected{border-color:var(--violet);background:var(--violet-soft)}
+.qp-letter{width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--text-muted);flex-shrink:0;font-family:var(--font-mono);transition:all .25s}
+.qp-opt.selected .qp-letter{background:var(--violet-deep);color:white}
+
+/* Likert for style assessment */
+.likert-assess{display:flex;gap:6px;margin-bottom:14px}
+.likert-assess .lk-btn .ln{font-size:.58rem;line-height:1.2}
+
+/* ═══════════════════════════════════════
+   6. LEARNING STYLE RESULT
+   ═══════════════════════════════════════ */
+.result-style-icon{font-size:64px;margin-bottom:12px;animation:float 2.5s ease-in-out infinite}
+.result-bars{display:flex;flex-direction:column;gap:10px;margin:20px 0;text-align:left}
+.result-bar-row{display:flex;align-items:center;gap:10px}
+.result-bar-label{font-size:.75rem;font-weight:600;min-width:88px;color:var(--text-secondary)}
+.result-bar-track{flex:1;height:10px;border-radius:var(--r-full);background:rgba(255,255,255,.05);overflow:hidden}
+.result-bar-fill{height:100%;border-radius:var(--r-full);animation:barGrow .8s var(--ease-out) both}
+.result-bar-val{font-size:.78rem;font-weight:600;min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ═══════════════════════════════════════
+   7. TOP NAV (for Home + Player)
+   ═══════════════════════════════════════ */
+.topnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;background:var(--bg-glass);backdrop-filter:blur(24px) saturate(1.4);border-bottom:1px solid var(--border-dim)}
+.topnav-left{display:flex;align-items:center;gap:24px}
+.topnav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem;letter-spacing:-.03em;cursor:pointer}
+.topnav-brand .logo-mark{width:28px;height:28px;border-radius:8px;font-size:13px}
+.topnav-links{display:flex;gap:5px}
+.topnav-link{padding:6px 13px;border:none;background:transparent;color:var(--text-secondary);font-size:.8rem;font-weight:500;border-radius:var(--r-full);transition:all .2s var(--ease-out)}
+.topnav-link:hover{color:var(--text-primary);background:rgba(255,255,255,.04)}
+.topnav-link.active{color:var(--violet);background:var(--violet-soft)}
+.topnav-right{display:flex;align-items:center;gap:12px}
+.topnav-search{display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:var(--r-full);background:var(--bg-input);border:1px solid var(--border-dim);color:var(--text-muted);font-size:.75rem;width:180px;transition:border-color .2s}
+.topnav-search:hover{border-color:var(--border-subtle)}
+.topnav-search .sk{margin-left:auto;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.05);font-size:.62rem;font-weight:600}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--rose));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
+.avatar:hover{border-color:var(--violet)}
+
+/* ═══════════════════════════════════════
+   8. HOME / START PAGE
+   ═══════════════════════════════════════ */
+.home-hero{padding:42px 36px 32px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap}
+.home-hero h1{font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1.25;letter-spacing:-.02em;margin-bottom:6px}
+.home-hero h1 .wave{display:inline-block;animation:wave 2s ease-in-out infinite;transform-origin:70% 70%}
+.home-hero p{color:var(--text-secondary);font-size:.9rem;max-width:480px}
+.hero-stats{display:flex;gap:16px;flex-shrink:0}
+.hero-stat{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:14px 20px;min-width:120px;transition:border-color .3s,transform .3s var(--ease-out)}
+.hero-stat:hover{border-color:var(--border-focus);transform:translateY(-2px)}
+.hs-val{font-size:1.45rem;font-weight:700;letter-spacing:-.03em;line-height:1.2}
+.hs-label{font-size:.68rem;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+.insight-banner{margin:0 36px 24px;padding:16px 22px;background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(52,211,153,.05));border:1px solid rgba(167,139,250,.12);border-radius:var(--r-lg);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ib-icon{width:42px;height:42px;border-radius:11px;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ib-text{flex:1;min-width:200px}
+.ib-text strong{color:var(--text-bright);font-weight:600}
+.ib-text p{font-size:.8rem;color:var(--text-secondary);margin-top:2px}
+.ib-action{padding:8px 18px;border:1px solid var(--border-focus);background:transparent;color:var(--violet);border-radius:var(--r-full);font-size:.78rem;font-weight:600;transition:all .25s var(--ease-out);white-space:nowrap}
+.ib-action:hover{background:var(--violet-soft)}
+
+.section-heading{padding:0 36px;margin-bottom:16px;display:flex;align-items:baseline;justify-content:space-between}
+.section-heading h2{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
+.section-heading .see-all{font-size:.75rem;color:var(--text-muted);background:none;border:none;font-weight:500;transition:color .2s}
+.section-heading .see-all:hover{color:var(--violet)}
+
+.course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:0 36px 36px}
+.course-card{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;transition:all .35s var(--ease-out)}
+.course-card:hover{border-color:var(--border-focus);transform:translateY(-3px);box-shadow:0 14px 40px rgba(124,58,237,.07)}
+.cc-banner{height:110px;position:relative;overflow:hidden}
+.cc-banner .bg{position:absolute;inset:0}
+.bg.g1{background:linear-gradient(135deg,#1e1145,#2d1b69,#0f2027)}.bg.g2{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364)}.bg.g3{background:linear-gradient(135deg,#1a0a2e,#3b1c5a,#0f2027)}
+.cc-banner .cc-emoji{position:absolute;bottom:12px;left:16px;font-size:32px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.4))}
+.cc-banner .cc-badge{position:absolute;top:10px;right:12px;padding:3px 9px;border-radius:var(--r-full);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;backdrop-filter:blur(8px)}
+.badge-active{background:var(--emerald-soft);color:var(--emerald);border:1px solid rgba(52,211,153,.2)}
+.badge-new{background:var(--violet-soft);color:var(--violet);border:1px solid rgba(167,139,250,.2)}
+.cc-body{padding:16px 18px 18px}
+.cc-title{font-weight:700;font-size:.92rem;letter-spacing:-.01em;margin-bottom:3px}
+.cc-org{font-size:.72rem;color:var(--text-muted);margin-bottom:12px}
+.cc-metrics{display:flex;flex-direction:column;gap:7px}
+.cc-metric-row{display:flex;align-items:center;gap:9px}
+.cc-metric-label{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);min-width:72px}
+.cc-bar-track{flex:1;height:5px;border-radius:var(--r-full);background:rgba(255,255,255,.04);overflow:hidden}
+.cc-bar-fill{height:100%;border-radius:var(--r-full);transition:width .8s var(--ease-out)}
+.cc-bar-fill.comp{background:linear-gradient(90deg,var(--sky),#818cf8)}
+.cc-bar-fill.know{background:linear-gradient(90deg,var(--emerald),#6ee7b7)}
+.cc-metric-val{font-size:.7rem;font-weight:600;min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.cc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-dim)}
+.cc-style{padding:3px 8px;border-radius:var(--r-full);font-size:.62rem;font-weight:600;background:var(--violet-soft);color:var(--violet)}
+.cc-continue{padding:6px 14px;border:none;border-radius:var(--r-full);background:var(--violet-deep);color:white;font-size:.72rem;font-weight:600;transition:all .25s var(--ease-out)}
+.cc-continue:hover{background:var(--violet)}
+
+/* Bottom grid */
+.home-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 36px 42px}
+.home-panel{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-lg);padding:20px 22px}
+.home-panel h3{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:14px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm)}
+.lb-row:hover{background:rgba(255,255,255,.02)}
+.lb-rank{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}
+.lb-rank.gold{background:var(--amber-soft);color:var(--amber)}.lb-rank.silver{background:rgba(192,192,192,.1);color:#c0c0c0}.lb-rank.bronze{background:var(--coral-soft);color:var(--coral)}.lb-rank.normal{background:rgba(255,255,255,.04);color:var(--text-muted)}
+.lb-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+.lb-name{flex:1;font-size:.8rem;font-weight:500}
+.lb-you{color:var(--violet);font-weight:600}
+.lb-score{font-size:.75rem;font-weight:600;color:var(--text-secondary);font-variant-numeric:tabular-nums}
+.streak-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.streak-card{padding:14px;border-radius:var(--r-md);border:1px solid var(--border-dim);background:var(--bg-elevated);text-align:center}
+.sc-icon{font-size:24px;margin-bottom:4px}
+.sc-val{font-size:1.3rem;font-weight:700;letter-spacing:-.03em}
+.sc-label{font-size:.65rem;color:var(--text-muted);margin-top:2px}
+
+/* ═══════════════════════════════════════
+   9. LESSON PLAYER (Trace Page View)
+   ═══════════════════════════════════════ */
+.player-layout{display:grid;grid-template-columns:1fr 360px;flex:1}
+.comp-strip{display:flex;align-items:center;gap:22px;padding:12px 28px;background:var(--bg-elevated);border-bottom:1px solid var(--border-dim)}
+.cm{display:flex;align-items:center;gap:9px;flex:1;max-width:280px}
+.cm-label{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);min-width:80px}
+.cm-track{flex:1;height:6px;border-radius:var(--r-full);background:rgba(255,255,255,.04);overflow:hidden}
+.cm-fill{height:100%;border-radius:var(--r-full);transition:width .8s var(--ease-out)}
+.cm-fill.comp{background:linear-gradient(90deg,var(--sky),#818cf8)}.cm-fill.know{background:linear-gradient(90deg,var(--emerald),#6ee7b7)}
+.cm-val{font-size:.75rem;font-weight:600;min-width:32px;text-align:right;font-variant-numeric:tabular-nums}
+.gap-badge{font-size:.66rem;padding:4px 12px;border-radius:var(--r-full);font-weight:600;background:var(--amber-soft);color:var(--amber);white-space:nowrap;transition:all .5s var(--ease-out)}
+.gap-badge.good{background:var(--emerald-soft);color:var(--emerald)}
+
+.player-main{padding:22px 28px;display:flex;flex-direction:column;gap:18px}
+.vid-container{position:relative;border-radius:var(--r-lg);overflow:hidden;background:#07060d;border:1px solid var(--border-dim);aspect-ratio:16/9;box-shadow:0 6px 32px rgba(0,0,0,.3)}
+.vid-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(160deg,#0c0a18,#15122a,#0e0b1d);position:relative}
+.vid-ph .go{position:absolute;inset:0;opacity:.04;background-image:linear-gradient(rgba(167,139,250,.3) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,.3) 1px,transparent 1px);background-size:40px 40px}
+.vid-ph .glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.14),transparent 70%);filter:blur(35px)}
+.play-btn{width:64px;height:64px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--violet-deep),var(--violet));color:white;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(124,58,237,.4);transition:all .3s var(--ease-out);z-index:2;position:relative}
+.play-btn:hover{transform:scale(1.1);box-shadow:0 12px 36px rgba(124,58,237,.55)}
+.play-btn.playing{background:linear-gradient(135deg,#5b21b6,var(--violet-deep))}
+.vid-title{position:relative;z-index:2;font-size:.82rem;color:var(--text-secondary);font-weight:500}
+.vpw{display:flex;align-items:center;gap:10px}
+.vpt{flex:1;height:4px;border-radius:var(--r-full);background:rgba(255,255,255,.06);cursor:pointer;overflow:hidden}
+.vpf{height:100%;width:0%;border-radius:var(--r-full);background:var(--violet);transition:width .3s linear}
+.vtime{font-size:.7rem;color:var(--text-muted);font-variant-numeric:tabular-nums;font-family:var(--font-mono);min-width:64px}
+
+.sic{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;background:var(--bg-card);border-radius:var(--r-md);border:1px solid var(--border-dim)}
+.sic-i{width:36px;height:36px;border-radius:9px;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sic h3{font-size:.85rem;font-weight:600;margin-bottom:2px}
+.sic p{font-size:.75rem;color:var(--text-secondary);line-height:1.55}
+
+/* Sidebar */
+.p-sidebar{border-left:1px solid var(--border-dim);background:var(--bg-elevated);display:flex;flex-direction:column;overflow:hidden}
+.st-tabs{display:flex;padding:12px 12px 0;gap:4px}
+.st-tab{flex:1;padding:9px 4px;border:none;background:transparent;color:var(--text-muted);font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-radius:var(--r-sm);transition:all .25s var(--ease-out);display:flex;flex-direction:column;align-items:center;gap:3px}
+.st-tab .ti{font-size:16px}
+.st-tab:hover{background:rgba(255,255,255,.03);color:var(--text-secondary)}
+.st-tab.active{background:var(--violet-soft);color:var(--violet)}
+.sb-scroll{flex:1;padding:12px;overflow-y:auto}
+.ai-badge{display:inline-flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--violet);background:var(--violet-soft);padding:3px 9px;border-radius:var(--r-full);margin-bottom:10px}
+.ai-badge::before{content:'✦';font-size:8px}
+.panel{display:none;flex-direction:column;gap:10px}.panel.active{display:flex}
+.panel-t{font-family:var(--font-display);font-size:.88rem;font-weight:700;margin-bottom:2px}
+.mm-wrap{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:12px;min-height:220px;display:flex;align-items:center;justify-content:center}
+.mm-wrap svg{width:100%;height:auto}
+.nc{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:12px 14px;transition:border-color .3s}
+.nc:hover{border-color:var(--border-focus)}
+.nc h4{font-size:.75rem;font-weight:600;color:var(--violet);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.nc p{font-size:.72rem;color:var(--text-secondary);line-height:1.6}
+.kt{display:inline;background:var(--violet-soft);color:var(--violet);padding:1px 5px;border-radius:3px;font-weight:600;font-size:.7rem;font-family:var(--font-mono)}
+.ac{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:18px;text-align:center}
+.a-waveform{display:flex;align-items:center;justify-content:center;gap:2.5px;height:38px;margin:12px 0}
+.a-waveform .bar{width:3px;border-radius:var(--r-full);background:var(--violet);opacity:.25;animation:wavePulse 1.2s ease-in-out infinite}
+.a-waveform.playing .bar{opacity:1}
+.a-waveform .bar:nth-child(1){animation-delay:0s}.a-waveform .bar:nth-child(2){animation-delay:.1s}.a-waveform .bar:nth-child(3){animation-delay:.2s}.a-waveform .bar:nth-child(4){animation-delay:.15s}.a-waveform .bar:nth-child(5){animation-delay:.25s}.a-waveform .bar:nth-child(6){animation-delay:.05s}.a-waveform .bar:nth-child(7){animation-delay:.3s}.a-waveform .bar:nth-child(8){animation-delay:.12s}.a-waveform .bar:nth-child(9){animation-delay:.22s}.a-waveform .bar:nth-child(10){animation-delay:.18s}
+.tts-btn{padding:9px 20px;border:none;border-radius:var(--r-full);background:linear-gradient(135deg,var(--violet-deep),var(--violet));color:white;font-weight:600;font-size:.78rem;transition:all .3s var(--ease-out)}
+.tts-btn:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(124,58,237,.3)}
+.a-transcript{text-align:left;margin-top:10px;background:rgba(255,255,255,.02);border:1px solid var(--border-dim);border-radius:var(--r-sm);padding:10px 12px;font-size:.72rem;color:var(--text-secondary);line-height:1.7;max-height:140px;overflow-y:auto}
+.a-transcript .hl{color:var(--violet);font-weight:600}
+.mod-sections{padding:12px;border-top:1px solid var(--border-dim)}
+.mod-sections h4{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px}
+.sec-list{display:flex;flex-direction:column;gap:2px}
+.sec-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--r-sm);cursor:pointer;transition:background .2s;font-size:.75rem}
+.sec-item:hover{background:rgba(255,255,255,.03)}
+.sec-item.active{background:var(--violet-soft);color:var(--violet)}
+.sec-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);flex-shrink:0}
+.sec-item.active .sec-dot{background:var(--violet)}
+.sec-item.completed .sec-dot{background:var(--emerald)}
+.sec-time{margin-left:auto;font-size:.66rem;color:var(--text-muted);font-variant-numeric:tabular-nums;font-family:var(--font-mono)}
+
+/* ═══════════════════════════════════════
+   QUIZ OVERLAY (in-lesson)
+   ═══════════════════════════════════════ */
+.quiz-overlay{position:fixed;inset:0;background:rgba(5,4,10,.82);backdrop-filter:blur(16px);z-index:200;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .35s var(--ease-out)}
+.quiz-overlay.visible{display:flex;opacity:1}
+.qc{background:var(--bg-card);border:1px solid var(--border-focus);border-radius:var(--r-xl);padding:30px 28px;max-width:480px;width:92%;box-shadow:0 20px 64px rgba(124,58,237,.12);transform:translateY(14px) scale(.97);transition:transform .4s var(--ease-out)}
+.quiz-overlay.visible .qc{transform:translateY(0) scale(1)}
+.q-tag{display:inline-flex;align-items:center;gap:5px;background:var(--amber-soft);color:var(--amber);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 11px;border-radius:var(--r-full);margin-bottom:12px}
+.q-tag::before{content:'⏸';font-size:9px}
+.q-question{font-family:var(--font-display);font-size:1.05rem;font-weight:500;line-height:1.45;margin-bottom:18px}
+.q-options{display:flex;flex-direction:column;gap:8px}
+.q-opt{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--border-dim);background:var(--bg-elevated);cursor:pointer;font-size:.83rem;transition:all .25s var(--ease-out)}
+.q-opt:hover{border-color:var(--border-focus);background:var(--violet-soft)}
+.q-opt .ol{width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--text-muted);flex-shrink:0;font-family:var(--font-mono);transition:all .25s}
+.q-opt:hover .ol{background:var(--violet-soft);color:var(--violet)}
+.q-opt.correct{border-color:var(--emerald);background:var(--emerald-soft)}.q-opt.correct .ol{background:var(--emerald);color:white}
+.q-opt.wrong{border-color:var(--rose);background:var(--rose-soft)}.q-opt.wrong .ol{background:var(--rose);color:white}
+.q-opt.disabled{pointer-events:none;opacity:.5}
+.q-fb{margin-top:12px;padding:12px 14px;border-radius:var(--r-md);font-size:.78rem;line-height:1.5;display:none}
+.q-fb.correct{display:block;background:var(--emerald-soft);border:1px solid rgba(52,211,153,.2);color:var(--emerald)}
+.q-fb.wrong{display:block;background:var(--rose-soft);border:1px solid rgba(244,114,182,.2);color:var(--rose)}
+.conf-section{margin-top:16px;display:none}.conf-section.visible{display:block}
+.conf-label{font-size:.78rem;color:var(--text-secondary);margin-bottom:9px}
+.likert{display:flex;gap:6px;margin-bottom:7px}
+.lk-btn{flex:1;padding:10px 0;border:1px solid var(--border-dim);background:var(--bg-elevated);color:var(--text-muted);border-radius:var(--r-sm);font-size:.83rem;font-weight:600;transition:all .25s var(--ease-out);display:flex;flex-direction:column;align-items:center;gap:2px}
+.lk-btn .le{font-size:16px}.lk-btn .ln{font-size:.66rem}
+.lk-btn:hover{border-color:var(--border-focus);background:var(--violet-soft);color:var(--violet)}
+.lk-btn.selected{border-color:var(--violet);background:var(--violet-deep);color:white}
+.lk-hint{display:flex;justify-content:space-between;font-size:.62rem;color:var(--text-muted);padding:0 3px}
+.rev-nudge{display:none;margin-top:10px;padding:12px 14px;background:var(--amber-soft);border:1px solid rgba(251,192,45,.15);border-radius:var(--r-md);font-size:.75rem;color:var(--amber);line-height:1.5;align-items:flex-start;gap:9px}
+.rev-nudge.visible{display:flex}
+.rev-nudge .ni{font-size:16px;flex-shrink:0;margin-top:1px}
+.cont-btn{margin-top:14px;width:100%;padding:12px;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--violet-deep),var(--violet));color:white;font-weight:600;font-size:.86rem;transition:all .3s var(--ease-out);opacity:.35;pointer-events:none}
+.cont-btn.enabled{opacity:1;pointer-events:auto}
+.cont-btn.enabled:hover{transform:translateY(-1px);box-shadow:0 7px 20px rgba(124,58,237,.3)}
+
+/* Responsive */
+@media(max-width:1024px){.player-layout{grid-template-columns:1fr}.p-sidebar{border-left:none;border-top:1px solid var(--border-dim);max-height:480px}}
+@media(max-width:720px){.home-hero{flex-direction:column}.home-bottom{grid-template-columns:1fr}.hero-stats{flex-wrap:wrap}.course-grid{grid-template-columns:1fr}.topnav-links,.topnav-search{display:none}.community-grid{grid-template-columns:1fr!important}}
+
+/* ═══ MY COURSES PAGE ═══ */
+.courses-detail-card{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-lg);overflow:hidden}
+.cdc-header{padding:22px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.cdc-emoji{font-size:36px;flex-shrink:0}
+.cdc-header-info h2{font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:white}
+.cdc-header-info p{font-size:.75rem;color:rgba(255,255,255,.6)}
+.cdc-header-stats{display:flex;gap:18px;margin-left:auto}
+.cdc-stat{text-align:center}
+.cdc-stat-val{font-size:1.1rem;font-weight:700;display:block}
+.cdc-stat-label{font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.cdc-modules{padding:8px 12px}
+.cdc-mod{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:var(--r-sm);cursor:pointer;transition:background .2s}
+.cdc-mod:hover{background:rgba(255,255,255,.02)}
+.cdc-mod.current{background:var(--violet-soft);border-radius:var(--r-sm)}
+.cdc-mod-num{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;background:rgba(255,255,255,.04);color:var(--text-muted);flex-shrink:0}
+.cdc-mod-num.done{background:var(--emerald-soft);color:var(--emerald)}
+.cdc-mod-num.active{background:var(--violet-soft);color:var(--violet)}
+.cdc-mod-info{flex:1;display:flex;flex-direction:column;gap:1px}
+.cdc-mod-info strong{font-size:.82rem;font-weight:600}
+.cdc-mod-info span{font-size:.7rem;color:var(--text-muted)}
+.cdc-mod-meta{font-size:.7rem;color:var(--text-muted);text-align:right;min-width:110px;white-space:nowrap}
+.cdc-footer{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border-dim)}
+
+.offline-toggle{color:var(--sky);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;transition:color .2s}
+.offline-toggle:hover{color:var(--violet)}
+.offline-toggle.downloaded{color:var(--emerald);text-decoration:none}
+
+/* ═══ COMMUNITY PAGE ═══ */
+.community-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.comm-panel{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-lg);padding:22px 24px}
+.comm-panel.full-width{grid-column:1/-1}
+.comm-panel-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.comm-panel-header h3{font-family:var(--font-display);font-size:1.05rem;font-weight:700}
+
+.battle-opponents{display:flex;flex-direction:column;gap:8px}
+.battle-opp{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--border-dim);cursor:pointer;transition:all .25s var(--ease-out)}
+.battle-opp:hover{border-color:var(--border-focus);background:var(--violet-soft)}
+.battle-opp.selected{border-color:var(--violet);background:var(--violet-soft)}
+
+.battle-header-strip{display:flex;align-items:center;justify-content:center;gap:20px;padding:14px;background:var(--bg-elevated);border-radius:var(--r-md);margin-bottom:14px}
+.battle-player{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600}
+.battle-score{padding:3px 10px;border-radius:var(--r-full);background:var(--violet-soft);color:var(--violet);font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums}
+.battle-progress-text{text-align:center;font-size:.72rem;color:var(--text-muted);margin-bottom:12px;font-weight:600}
+
+.battle-final-scores{display:flex;justify-content:center;gap:24px}
+.battle-final-p{text-align:center}
+.battle-final-p .bfp-name{font-size:.78rem;color:var(--text-secondary);margin-bottom:4px}
+.battle-final-p .bfp-score{font-size:1.6rem;font-weight:700}
+
+/* Activity Feed */
+.activity-feed{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+.feed-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--r-sm);transition:background .2s}
+.feed-item:hover{background:rgba(255,255,255,.02)}
+.feed-content{font-size:.8rem;color:var(--text-secondary);line-height:1.5;flex:1}
+.feed-content strong{color:var(--text-primary);font-weight:600}
+.feed-time{display:block;font-size:.66rem;color:var(--text-muted);margin-top:3px}
+
+/* ═══ ACCESSIBILITY OVERLAY ═══ */
+.a11y-overlay{position:fixed;inset:0;background:rgba(5,4,10,.7);backdrop-filter:blur(12px);z-index:300;display:none;align-items:center;justify-content:flex-end;padding:20px}
+.a11y-overlay.visible{display:flex}
+.a11y-panel{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:var(--r-xl);padding:28px 26px;width:340px;max-height:90vh;overflow-y:auto;animation:scaleIn .3s var(--ease-out)}
+.a11y-group{margin-bottom:18px}
+.a11y-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;display:block}
+.a11y-options{display:flex;gap:6px;flex-wrap:wrap}
+.a11y-opt{padding:8px 14px;border:1px solid var(--border-dim);background:var(--bg-elevated);color:var(--text-secondary);border-radius:var(--r-full);font-size:.75rem;font-weight:500;transition:all .2s var(--ease-out);font-family:var(--font-body)}
+.a11y-opt:hover{border-color:var(--border-focus);color:var(--text-primary)}
+.a11y-opt.active{border-color:var(--violet);background:var(--violet-soft);color:var(--violet);font-weight:600}
+
+/* Color-blind filter overlays */
+body.cb-deuteranopia{filter:url('#deuteranopia-filter')}
+body.cb-protanopia{filter:url('#protanopia-filter')}
+body.cb-tritanopia{filter:url('#tritanopia-filter')}
+body.theme-high-contrast{--bg-base:#000;--bg-elevated:#0a0a0a;--bg-card:#111;--text-primary:#fff;--text-secondary:#ccc;--text-muted:#999;--border-dim:rgba(255,255,255,.15);--border-subtle:rgba(255,255,255,.2)}
+</style>
+</head>
+<body>
+<div class="orb a"></div><div class="orb b"></div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 1: SPLASH SCREEN
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page active" id="pageSplash">
+  <div class="splash-inner">
+    <div class="splash-logo">D</div>
+    <div class="splash-title" style="font-family:var(--font-display)">disco</div>
+    <p class="splash-tagline">AI-powered learning that adapts to you. Completion meets comprehension.</p>
+    <div class="splash-btns">
+      <button class="btn-primary" onclick="goPage('login')">Log In</button>
+      <button class="btn-secondary" onclick="goPage('signup')">Sign Up</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2A: LOG IN
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageLogin">
+  <div class="card-shell">
+    <div class="logo-row"><div class="logo-mark">D</div><span class="logo-word">disco</span></div>
+    <h2 class="card-title">Welcome back</h2>
+    <p class="card-sub">Log in to continue your learning journey.</p>
+    <div class="input-group">
+      <label class="input-label">Username or Email</label>
+      <input class="input-field" type="text" placeholder="gibran@ubc.ca">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Password</label>
+      <input class="input-field" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" onclick="goPage('home')" style="margin-top:8px">Log In</button>
+    <div class="link-row">Don't have an account? <span onclick="goPage('signup')">Sign Up</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2B: SIGN UP
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageSignup">
+  <div class="card-shell">
+    <div class="logo-row"><div class="logo-mark">D</div><span class="logo-word">disco</span></div>
+    <h2 class="card-title">Create your account</h2>
+    <p class="card-sub">Start learning smarter in under a minute.</p>
+    <div class="input-group">
+      <label class="input-label">Username</label>
+      <input class="input-field" type="text" placeholder="gibran_learns" id="signupUser">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input class="input-field" type="email" placeholder="gibran@ubc.ca" id="signupEmail">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Password</label>
+      <input class="input-field" type="password" placeholder="••••••••" id="signupPass">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Confirm Password</label>
+      <input class="input-field" type="password" placeholder="••••••••" id="signupConfirm">
+    </div>
+    <button class="btn-primary" onclick="goPage('intro')" style="margin-top:4px">Sign Up</button>
+    <div class="link-row">Already have an account? <span onclick="goPage('login')">Log In</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 3: INTRODUCTION (Learning Goals)
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageIntro">
+  <div class="card-shell wide">
+    <div class="step-dots"><span class="step-dot active"></span><span class="step-dot"></span><span class="step-dot"></span></div>
+    <h2 class="card-title">What do you want to achieve?</h2>
+    <p class="card-sub">Select your top learning goals. This helps us personalize your experience.</p>
+    <div class="goals-grid" id="goalsGrid">
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">💻</div><div class="goal-label">Learn to Code</div></div>
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">📊</div><div class="goal-label">Data Skills</div></div>
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">🎨</div><div class="goal-label">Design & UX</div></div>
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">📈</div><div class="goal-label">Career Growth</div></div>
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">🧠</div><div class="goal-label">Critical Thinking</div></div>
+      <div class="goal-card" onclick="toggleGoal(this)"><div class="goal-icon">🌍</div><div class="goal-label">General Knowledge</div></div>
+    </div>
+    <button class="btn-primary" onclick="goPage('enroll')">Continue →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 4: COURSE ENROLLMENT
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageEnroll">
+  <div class="card-shell wide">
+    <div class="step-dots"><span class="step-dot done"></span><span class="step-dot active"></span><span class="step-dot"></span></div>
+    <h2 class="card-title">Enroll in a course</h2>
+    <p class="card-sub">Pick a course to get started, or skip for now.</p>
+    <div class="enroll-list">
+      <div class="enroll-card" onclick="toggleEnroll(this)">
+        <div class="enroll-emoji">🐍</div>
+        <div class="enroll-info"><h4>Introduction to Python</h4><p>Coding Temple · 8 Modules · Beginner</p></div>
+        <div class="enroll-check">✓</div>
+      </div>
+      <div class="enroll-card" onclick="toggleEnroll(this)">
+        <div class="enroll-emoji">📊</div>
+        <div class="enroll-info"><h4>Data Analytics Foundations</h4><p>A.CRE Academy · 6 Modules · Intermediate</p></div>
+        <div class="enroll-check">✓</div>
+      </div>
+      <div class="enroll-card" onclick="toggleEnroll(this)">
+        <div class="enroll-emoji">🎨</div>
+        <div class="enroll-info"><h4>UX Research Methods</h4><p>PM Hive Accelerator · 5 Modules · Beginner</p></div>
+        <div class="enroll-check">✓</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="goPage('styleSurvey')">Continue →</button>
+    <div style="margin-top:10px"><button class="btn-ghost" onclick="goPage('home')">Skip for now →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 5: LEARNING STYLE SURVEY (replaces the old 4-format assessment)
+     Multi-question behavioral survey to infer learning style
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageStyleSurvey">
+  <div class="card-shell wide" id="surveyCard">
+    <div class="step-dots"><span class="step-dot done"></span><span class="step-dot done"></span><span class="step-dot active"></span></div>
+
+    <!-- Question container — JS will cycle through questions -->
+    <div id="surveyQContainer">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Progress text -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px">
+      <span style="font-size:.72rem;color:var(--text-muted);font-weight:600" id="surveyProgress">Question 1 of 5</span>
+      <div style="flex:1;max-width:180px;margin-left:16px;height:4px;border-radius:99px;background:rgba(255,255,255,.05);overflow:hidden">
+        <div id="surveyBar" style="height:100%;width:20%;border-radius:99px;background:var(--violet);transition:width .4s var(--ease-out)"></div>
+      </div>
+    </div>
+    <button class="btn-primary" id="surveyNextBtn" disabled onclick="nextSurveyQ()" style="margin-top:16px">Next →</button>
+    <div style="margin-top:8px"><button class="btn-ghost" onclick="goPage('home')">Skip for now →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 6: LEARNING STYLE RESULT (with ability to change)
+     ══════════════════════════════════════════════════ -->
+<div class="page centered-page" id="pageStyleResult">
+  <div class="card-shell wide">
+    <div class="result-style-icon" id="resultIcon">🧠</div>
+    <h2 class="card-title">Your Learning Style</h2>
+    <p class="card-sub">Based on your answers, here's how you learn best. We'll adapt your content accordingly.</p>
+    <div class="result-bars" id="resultBars">
+      <!-- Dynamically populated -->
+    </div>
+    <div style="background:var(--bg-elevated);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:14px 18px;margin-bottom:18px;text-align:left">
+      <p style="font-size:.82rem;color:var(--text-secondary);line-height:1.6" id="resultSummary">
+        <strong style="color:var(--violet)">Calculating...</strong>
+      </p>
+    </div>
+
+    <!-- Change learning style override -->
+    <div style="border-top:1px solid var(--border-dim);padding-top:18px;margin-bottom:20px">
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;font-weight:500">Not quite right? Choose your preferred style:</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center" id="overrideBtns">
+        <button class="pill" onclick="overrideStyle('visual')"><span class="pill-icon">👁️</span> Visual</button>
+        <button class="pill" onclick="overrideStyle('auditory')"><span class="pill-icon">🎧</span> Auditory</button>
+        <button class="pill" onclick="overrideStyle('reading')"><span class="pill-icon">📖</span> Read/Write</button>
+        <button class="pill" onclick="overrideStyle('kinesthetic')"><span class="pill-icon">🤲</span> Kinesthetic</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goPage('home')">Start Learning →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 7: HOME / START PAGE
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="pageHome">
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="topnav-brand" onclick="goPage('home')"><div class="logo-mark">D</div><span>disco</span></div>
+      <div class="topnav-links">
+        <button class="topnav-link active" id="navHome" onclick="goPage('home')">Home</button>
+        <button class="topnav-link" id="navCourses" onclick="goPage('courses')">My Courses</button>
+        <button class="topnav-link" id="navComm" onclick="goPage('community')">Community</button>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <div class="topnav-search"><span>🔍</span> Search courses... <span class="sk">⌘K</span></div>
+      <button class="topnav-link" onclick="openAccessibility()" title="Accessibility" style="font-size:16px;padding:6px 10px">⚙️</button>
+      <div class="avatar" onclick="openAccessibility()">G</div>
+    </div>
+  </nav>
+
+  <section class="home-hero anim">
+    <div>
+      <h1>Welcome back, Gibran <span class="wave">👋</span></h1>
+      <p>Your learning style is adapting. Keep building momentum — you're closing the comprehension gap.</p>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat anim d1"><div class="hs-val" style="color:var(--violet)">73%</div><div class="hs-label">Avg Knowledge</div></div>
+      <div class="hero-stat anim d2"><div class="hs-val" style="color:var(--emerald)">12</div><div class="hs-label">Day Streak</div></div>
+      <div class="hero-stat anim d3"><div class="hs-val" style="color:var(--amber)">4</div><div class="hs-label">Courses</div></div>
+    </div>
+  </section>
+
+  <div class="insight-banner anim d2">
+    <div class="ib-icon">🧠</div>
+    <div class="ib-text">
+      <strong>Comprehension Insight:</strong>
+      <p>Your completion is 18% ahead of your knowledge score in <em>Intro to Python</em>. Targeted review checkpoints can close the gap.</p>
+    </div>
+    <button class="ib-action" onclick="goPage('player')">Review Now →</button>
+  </div>
+
+  <div class="section-heading anim d3"><h2>Continue Learning</h2><button class="see-all">View all →</button></div>
+  <div class="course-grid">
+    <div class="course-card anim d3" onclick="goPage('player')">
+      <div class="cc-banner"><div class="bg g1"></div><div class="cc-emoji">🐍</div><div class="cc-badge badge-active">In Progress</div></div>
+      <div class="cc-body">
+        <div class="cc-title">Introduction to Python</div>
+        <div class="cc-org">Coding Temple · 8 Modules</div>
+        <div class="cc-metrics">
+          <div class="cc-metric-row"><span class="cc-metric-label">Completion</span><div class="cc-bar-track"><div class="cc-bar-fill comp" style="width:62%"></div></div><span class="cc-metric-val" style="color:var(--sky)">62%</span></div>
+          <div class="cc-metric-row"><span class="cc-metric-label">Knowledge</span><div class="cc-bar-track"><div class="cc-bar-fill know" style="width:44%"></div></div><span class="cc-metric-val" style="color:var(--emerald)">44%</span></div>
+        </div>
+        <div class="cc-footer"><span class="cc-style">🧠 Visual</span><button class="cc-continue" onclick="event.stopPropagation();goPage('player')">Continue →</button></div>
+      </div>
+    </div>
+    <div class="course-card anim d4">
+      <div class="cc-banner"><div class="bg g2"></div><div class="cc-emoji">📊</div><div class="cc-badge badge-active">In Progress</div></div>
+      <div class="cc-body">
+        <div class="cc-title">Data Analytics Foundations</div>
+        <div class="cc-org">A.CRE Academy · 6 Modules</div>
+        <div class="cc-metrics">
+          <div class="cc-metric-row"><span class="cc-metric-label">Completion</span><div class="cc-bar-track"><div class="cc-bar-fill comp" style="width:35%"></div></div><span class="cc-metric-val" style="color:var(--sky)">35%</span></div>
+          <div class="cc-metric-row"><span class="cc-metric-label">Knowledge</span><div class="cc-bar-track"><div class="cc-bar-fill know" style="width:30%"></div></div><span class="cc-metric-val" style="color:var(--emerald)">30%</span></div>
+        </div>
+        <div class="cc-footer"><span class="cc-style">📝 Read/Write</span><button class="cc-continue">Continue →</button></div>
+      </div>
+    </div>
+    <div class="course-card anim d5">
+      <div class="cc-banner"><div class="bg g3"></div><div class="cc-emoji">🎨</div><div class="cc-badge badge-new">New</div></div>
+      <div class="cc-body">
+        <div class="cc-title">UX Research Methods</div>
+        <div class="cc-org">PM Hive Accelerator · 5 Modules</div>
+        <div class="cc-metrics">
+          <div class="cc-metric-row"><span class="cc-metric-label">Completion</span><div class="cc-bar-track"><div class="cc-bar-fill comp" style="width:10%"></div></div><span class="cc-metric-val" style="color:var(--sky)">10%</span></div>
+          <div class="cc-metric-row"><span class="cc-metric-label">Knowledge</span><div class="cc-bar-track"><div class="cc-bar-fill know" style="width:8%"></div></div><span class="cc-metric-val" style="color:var(--emerald)">8%</span></div>
+        </div>
+        <div class="cc-footer"><span class="cc-style">🎧 Auditory</span><button class="cc-continue">Start →</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-bottom">
+    <div class="home-panel anim d5">
+      <h3>Community Leaderboard</h3>
+      <div class="lb-row"><div class="lb-rank gold">1</div><div class="lb-av" style="background:#e879f9">A</div><div class="lb-name">Aisha M.</div><div class="lb-score">920</div></div>
+      <div class="lb-row"><div class="lb-rank silver">2</div><div class="lb-av" style="background:#60a5fa">L</div><div class="lb-name">Liam K.</div><div class="lb-score">885</div></div>
+      <div class="lb-row"><div class="lb-rank bronze">3</div><div class="lb-av" style="background:linear-gradient(135deg,#FB923C,#F472B6)">G</div><div class="lb-name lb-you">Gibran (You)</div><div class="lb-score">840</div></div>
+      <div class="lb-row"><div class="lb-rank normal">4</div><div class="lb-av" style="background:#34d399">M</div><div class="lb-name">Mei L.</div><div class="lb-score">790</div></div>
+      <div class="lb-row"><div class="lb-rank normal">5</div><div class="lb-av" style="background:#fbbf24">C</div><div class="lb-name">Carlos R.</div><div class="lb-score">755</div></div>
+    </div>
+    <div class="home-panel anim d6">
+      <h3>Your Stats</h3>
+      <div class="streak-grid">
+        <div class="streak-card"><div class="sc-icon">🔥</div><div class="sc-val" style="color:var(--amber)">12</div><div class="sc-label">Day Streak</div></div>
+        <div class="streak-card"><div class="sc-icon">🧠</div><div class="sc-val" style="color:var(--violet)">73%</div><div class="sc-label">Avg Knowledge</div></div>
+        <div class="streak-card"><div class="sc-icon">📚</div><div class="sc-val" style="color:var(--sky)">24</div><div class="sc-label">Checks Passed</div></div>
+        <div class="streak-card"><div class="sc-icon">⏱️</div><div class="sc-val" style="color:var(--emerald)">6.2h</div><div class="sc-label">This Week</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE: MY COURSES
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="pageCourses">
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="topnav-brand" onclick="goPage('home')"><div class="logo-mark">D</div><span>disco</span></div>
+      <div class="topnav-links">
+        <button class="topnav-link" onclick="goPage('home')">Home</button>
+        <button class="topnav-link active" onclick="goPage('courses')">My Courses</button>
+        <button class="topnav-link" onclick="goPage('community')">Community</button>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <button class="topnav-link" onclick="openAccessibility()" title="Accessibility settings" style="font-size:16px;padding:6px 10px">⚙️</button>
+      <div class="avatar" onclick="openAccessibility()">G</div>
+    </div>
+  </nav>
+
+  <div style="padding:36px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px">
+      <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:700">My Courses</h1>
+      <span style="font-size:.78rem;color:var(--text-muted)">3 courses enrolled</span>
+    </div>
+
+    <!-- Course 1: Python (expanded) -->
+    <div class="courses-detail-card anim">
+      <div class="cdc-header" style="background:linear-gradient(135deg,#1e1145,#2d1b69)">
+        <div class="cdc-emoji">🐍</div>
+        <div class="cdc-header-info">
+          <h2>Introduction to Python</h2>
+          <p>Coding Temple · 8 Modules · Beginner</p>
+        </div>
+        <div class="cdc-header-stats">
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--sky)">62%</span><span class="cdc-stat-label">Completion</span></div>
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--emerald)">44%</span><span class="cdc-stat-label">Knowledge</span></div>
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--amber)">18%</span><span class="cdc-stat-label">Gap</span></div>
+        </div>
+      </div>
+      <div class="cdc-modules">
+        <div class="cdc-mod completed"><span class="cdc-mod-num done">✓</span><div class="cdc-mod-info"><strong>Module 1: Setup & Hello World</strong><span>Installation, IDE, first program</span></div><span class="cdc-mod-meta">12 min · <span style="color:var(--emerald)">Done</span></span></div>
+        <div class="cdc-mod completed"><span class="cdc-mod-num done">✓</span><div class="cdc-mod-info"><strong>Module 2: Variables & Data Types</strong><span>Strings, integers, lists, dicts</span></div><span class="cdc-mod-meta">18 min · <span style="color:var(--emerald)">Done</span></span></div>
+        <div class="cdc-mod current" onclick="goPage('player')"><span class="cdc-mod-num active">3</span><div class="cdc-mod-info"><strong>Module 3: Control Flow</strong><span>Loops, conditionals, break/continue</span></div><span class="cdc-mod-meta">21 min · <span style="color:var(--violet)">Current</span></span></div>
+        <div class="cdc-mod"><span class="cdc-mod-num">4</span><div class="cdc-mod-info"><strong>Module 4: Functions & Scope</strong><span>Defining functions, parameters, return</span></div><span class="cdc-mod-meta">15 min · <span style="color:var(--text-muted)">Locked</span></span></div>
+        <div class="cdc-mod"><span class="cdc-mod-num">5</span><div class="cdc-mod-info"><strong>Module 5: File I/O & Exceptions</strong><span>Reading files, try/except</span></div><span class="cdc-mod-meta">14 min · <span style="color:var(--text-muted)">Locked</span></span></div>
+        <div class="cdc-mod"><span class="cdc-mod-num">6</span><div class="cdc-mod-info"><strong>Module 6: OOP Basics</strong><span>Classes, objects, inheritance</span></div><span class="cdc-mod-meta">22 min · <span style="color:var(--text-muted)">Locked</span></span></div>
+        <div class="cdc-mod"><span class="cdc-mod-num">7</span><div class="cdc-mod-info"><strong>Module 7: Libraries & APIs</strong><span>pip, requests, JSON</span></div><span class="cdc-mod-meta">18 min · <span style="color:var(--text-muted)">Locked</span></span></div>
+        <div class="cdc-mod"><span class="cdc-mod-num">8</span><div class="cdc-mod-info"><strong>Module 8: Final Project</strong><span>Build a CLI application</span></div><span class="cdc-mod-meta">30 min · <span style="color:var(--text-muted)">Locked</span></span></div>
+      </div>
+      <div class="cdc-footer">
+        <span class="cc-style">🧠 Visual</span>
+        <div>
+          <span style="font-size:.72rem;color:var(--text-muted);margin-right:12px">📥 <span class="offline-toggle" onclick="toggleOffline(this)">Download for offline</span></span>
+          <button class="cc-continue" onclick="goPage('player')">Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course 2: Data Analytics (collapsed) -->
+    <div class="courses-detail-card anim d2" style="margin-top:16px">
+      <div class="cdc-header" style="background:linear-gradient(135deg,#0f2027,#203a43)">
+        <div class="cdc-emoji">📊</div>
+        <div class="cdc-header-info">
+          <h2>Data Analytics Foundations</h2>
+          <p>A.CRE Academy · 6 Modules · Intermediate</p>
+        </div>
+        <div class="cdc-header-stats">
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--sky)">35%</span><span class="cdc-stat-label">Completion</span></div>
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--emerald)">30%</span><span class="cdc-stat-label">Knowledge</span></div>
+        </div>
+      </div>
+      <div class="cdc-footer"><span class="cc-style">📝 Read/Write</span><div><span style="font-size:.72rem;color:var(--text-muted);margin-right:12px">📥 <span class="offline-toggle" onclick="toggleOffline(this)">Download for offline</span></span><button class="cc-continue">Continue →</button></div></div>
+    </div>
+
+    <!-- Course 3: UX (collapsed) -->
+    <div class="courses-detail-card anim d3" style="margin-top:16px">
+      <div class="cdc-header" style="background:linear-gradient(135deg,#1a0a2e,#3b1c5a)">
+        <div class="cdc-emoji">🎨</div>
+        <div class="cdc-header-info">
+          <h2>UX Research Methods</h2>
+          <p>PM Hive Accelerator · 5 Modules · Beginner</p>
+        </div>
+        <div class="cdc-header-stats">
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--sky)">10%</span><span class="cdc-stat-label">Completion</span></div>
+          <div class="cdc-stat"><span class="cdc-stat-val" style="color:var(--emerald)">8%</span><span class="cdc-stat-label">Knowledge</span></div>
+        </div>
+      </div>
+      <div class="cdc-footer"><span class="cc-style">🎧 Auditory</span><div><span style="font-size:.72rem;color:var(--text-muted);margin-right:12px">📥 <span class="offline-toggle" onclick="toggleOffline(this)">Download for offline</span></span><button class="cc-continue">Start →</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE: COMMUNITY (Quiz Battle + Leaderboard + Feed)
+     ══════════════════════════════════════════════════ -->
+<div class="page" id="pageCommunity">
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="topnav-brand" onclick="goPage('home')"><div class="logo-mark">D</div><span>disco</span></div>
+      <div class="topnav-links">
+        <button class="topnav-link" onclick="goPage('home')">Home</button>
+        <button class="topnav-link" onclick="goPage('courses')">My Courses</button>
+        <button class="topnav-link active" onclick="goPage('community')">Community</button>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <button class="topnav-link" onclick="openAccessibility()" style="font-size:16px;padding:6px 10px">⚙️</button>
+      <div class="avatar">G</div>
+    </div>
+  </nav>
+
+  <div style="padding:36px">
+    <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:700;margin-bottom:6px" class="anim">Community</h1>
+    <p style="color:var(--text-secondary);font-size:.88rem;margin-bottom:28px" class="anim d1">Challenge peers, climb the leaderboard, and stay motivated together.</p>
+
+    <div class="community-grid">
+      <!-- Quiz Battle Panel -->
+      <div class="comm-panel anim d2">
+        <div class="comm-panel-header">
+          <h3>⚔️ Quiz Battle</h3>
+          <span style="font-size:.68rem;color:var(--text-muted)">Challenge a peer to a head-to-head quiz</span>
+        </div>
+
+        <!-- Battle state: idle (choose opponent) -->
+        <div id="battleIdle">
+          <p style="font-size:.8rem;color:var(--text-secondary);margin-bottom:14px">Select an opponent to battle:</p>
+          <div class="battle-opponents">
+            <div class="battle-opp" onclick="selectOpponent(this, 'Aisha M.')"><div class="lb-av" style="background:#e879f9;width:36px;height:36px;font-size:14px">A</div><div><div style="font-weight:600;font-size:.85rem">Aisha M.</div><div style="font-size:.68rem;color:var(--text-muted)">920 pts · #1</div></div></div>
+            <div class="battle-opp" onclick="selectOpponent(this, 'Liam K.')"><div class="lb-av" style="background:#60a5fa;width:36px;height:36px;font-size:14px">L</div><div><div style="font-weight:600;font-size:.85rem">Liam K.</div><div style="font-size:.68rem;color:var(--text-muted)">885 pts · #2</div></div></div>
+            <div class="battle-opp" onclick="selectOpponent(this, 'Mei L.')"><div class="lb-av" style="background:#34d399;width:36px;height:36px;font-size:14px">M</div><div><div style="font-weight:600;font-size:.85rem">Mei L.</div><div style="font-size:.68rem;color:var(--text-muted)">790 pts · #4</div></div></div>
+          </div>
+          <button class="btn-primary" id="battleStartBtn" disabled onclick="startBattle()" style="margin-top:14px">Start Battle →</button>
+        </div>
+
+        <!-- Battle state: in-progress -->
+        <div id="battleActive" style="display:none">
+          <div class="battle-header-strip">
+            <div class="battle-player"><div class="lb-av" style="background:linear-gradient(135deg,#FB923C,#F472B6);width:32px;height:32px;font-size:12px">G</div><span>You</span><span class="battle-score" id="yourScore">0</span></div>
+            <div style="font-size:.78rem;color:var(--text-muted);font-weight:700">VS</div>
+            <div class="battle-player"><div class="lb-av" id="oppAvatar" style="background:#e879f9;width:32px;height:32px;font-size:12px">A</div><span id="oppNameDisplay">Aisha</span><span class="battle-score" id="oppScore">0</span></div>
+          </div>
+          <div class="battle-progress-text" id="battleProgressText">Question 1 of 3</div>
+          <div id="battleQContainer"></div>
+          <button class="btn-primary" id="battleSubmitBtn" disabled onclick="submitBattleAnswer()" style="margin-top:12px">Submit Answer</button>
+        </div>
+
+        <!-- Battle state: result -->
+        <div id="battleResult" style="display:none;text-align:center;padding:20px 0">
+          <div id="battleResultIcon" style="font-size:52px;margin-bottom:10px">🏆</div>
+          <h3 id="battleResultTitle" style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:6px">Victory!</h3>
+          <p id="battleResultDesc" style="font-size:.82rem;color:var(--text-secondary);margin-bottom:18px"></p>
+          <div class="battle-final-scores" id="battleFinalScores"></div>
+          <button class="btn-primary" onclick="resetBattle()" style="margin-top:16px">Play Again</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Panel -->
+      <div class="comm-panel anim d3">
+        <div class="comm-panel-header">
+          <h3>🏅 Leaderboard</h3>
+          <span style="font-size:.68rem;color:var(--text-muted)">Refreshes every 60 seconds</span>
+        </div>
+        <div id="communityLB">
+          <div class="lb-row"><div class="lb-rank gold">1</div><div class="lb-av" style="background:#e879f9">A</div><div class="lb-name">Aisha M.</div><div class="lb-score">920 pts</div></div>
+          <div class="lb-row"><div class="lb-rank silver">2</div><div class="lb-av" style="background:#60a5fa">L</div><div class="lb-name">Liam K.</div><div class="lb-score">885 pts</div></div>
+          <div class="lb-row" style="background:var(--violet-soft);border-radius:8px"><div class="lb-rank bronze">3</div><div class="lb-av" style="background:linear-gradient(135deg,#FB923C,#F472B6)">G</div><div class="lb-name lb-you">Gibran (You)</div><div class="lb-score" id="lbYourScore">840 pts</div></div>
+          <div class="lb-row"><div class="lb-rank normal">4</div><div class="lb-av" style="background:#34d399">M</div><div class="lb-name">Mei L.</div><div class="lb-score">790 pts</div></div>
+          <div class="lb-row"><div class="lb-rank normal">5</div><div class="lb-av" style="background:#fbbf24">C</div><div class="lb-name">Carlos R.</div><div class="lb-score">755 pts</div></div>
+          <div class="lb-row"><div class="lb-rank normal">6</div><div class="lb-av" style="background:#a78bfa">S</div><div class="lb-name">Sara T.</div><div class="lb-score">720 pts</div></div>
+          <div class="lb-row"><div class="lb-rank normal">7</div><div class="lb-av" style="background:#fb7185">R</div><div class="lb-name">Ryan P.</div><div class="lb-score">695 pts</div></div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="comm-panel full-width anim d4">
+        <div class="comm-panel-header">
+          <h3>📢 Activity Feed</h3>
+          <span style="font-size:.68rem;color:var(--text-muted)">Updates within 5 seconds</span>
+        </div>
+        <div class="activity-feed" id="activityFeed">
+          <div class="feed-item"><div class="lb-av" style="background:#e879f9;width:28px;height:28px;font-size:10px;flex-shrink:0">A</div><div class="feed-content"><strong>Aisha M.</strong> completed Module 5 in Python with a <span style="color:var(--emerald)">92% knowledge score</span>.<span class="feed-time">2 min ago</span></div></div>
+          <div class="feed-item"><div class="lb-av" style="background:#60a5fa;width:28px;height:28px;font-size:10px;flex-shrink:0">L</div><div class="feed-content"><strong>Liam K.</strong> won a Quiz Battle against <strong>Carlos R.</strong> (3–1).<span class="feed-time">8 min ago</span></div></div>
+          <div class="feed-item"><div class="lb-av" style="background:#34d399;width:28px;height:28px;font-size:10px;flex-shrink:0">M</div><div class="feed-content"><strong>Mei L.</strong> earned the <span style="color:var(--amber)">🔥 7-Day Streak</span> badge!<span class="feed-time">15 min ago</span></div></div>
+          <div class="feed-item"><div class="lb-av" style="background:#fbbf24;width:28px;height:28px;font-size:10px;flex-shrink:0">C</div><div class="feed-content"><strong>Carlos R.</strong> started <em>Data Analytics Foundations</em>.<span class="feed-time">22 min ago</span></div></div>
+          <div class="feed-item"><div class="lb-av" style="background:linear-gradient(135deg,#FB923C,#F472B6);width:28px;height:28px;font-size:10px;flex-shrink:0">G</div><div class="feed-content"><strong>You</strong> passed a Knowledge Check in Module 3 with <span style="color:var(--violet)">confidence 4/5</span>.<span class="feed-time">1 hr ago</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     ACCESSIBILITY SETTINGS OVERLAY
+     ══════════════════════════════════════════════════ -->
+<div class="a11y-overlay" id="a11yOverlay" onclick="if(event.target===this)closeAccessibility()">
+  <div class="a11y-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700">⚙️ Accessibility Settings</h3>
+      <button onclick="closeAccessibility()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer">✕</button>
+    </div>
+
+    <div class="a11y-group">
+      <label class="a11y-label">Font Size</label>
+      <div class="a11y-options">
+        <button class="a11y-opt active" onclick="setFontSize(this,1)">Default</button>
+        <button class="a11y-opt" onclick="setFontSize(this,1.1)">Large</button>
+        <button class="a11y-opt" onclick="setFontSize(this,1.2)">X-Large</button>
+      </div>
+    </div>
+
+    <div class="a11y-group">
+      <label class="a11y-label">Font Weight</label>
+      <div class="a11y-options">
+        <button class="a11y-opt active" onclick="setFontWeight(this,'normal')">Normal</button>
+        <button class="a11y-opt" onclick="setFontWeight(this,'bold')">Bold</button>
+      </div>
+    </div>
+
+    <div class="a11y-group">
+      <label class="a11y-label">Line Spacing</label>
+      <div class="a11y-options">
+        <button class="a11y-opt active" onclick="setLineSpacing(this,1.6)">Default</button>
+        <button class="a11y-opt" onclick="setLineSpacing(this,1.9)">Relaxed</button>
+        <button class="a11y-opt" onclick="setLineSpacing(this,2.2)">Wide</button>
+      </div>
+    </div>
+
+    <div class="a11y-group">
+      <label class="a11y-label">Color Vision</label>
+      <div class="a11y-options">
+        <button class="a11y-opt active" onclick="setColorMode(this,'none')">Default</button>
+        <button class="a11y-opt" onclick="setColorMode(this,'deuteranopia')">Deuteranopia</button>
+        <button class="a11y-opt" onclick="setColorMode(this,'protanopia')">Protanopia</button>
+        <button class="a11y-opt" onclick="setColorMode(this,'tritanopia')">Tritanopia</button>
+      </div>
+    </div>
+
+    <div class="a11y-group">
+      <label class="a11y-label">Theme</label>
+      <div class="a11y-options">
+        <button class="a11y-opt active" onclick="setTheme(this,'dark')">Dark (Default)</button>
+        <button class="a11y-opt" onclick="setTheme(this,'high-contrast')">High Contrast</button>
+      </div>
+    </div>
+
+    <button class="btn-secondary" onclick="resetAccessibility()" style="margin-top:14px;font-size:.78rem">Reset to Defaults</button>
+  </div>
+</div>
+<div class="page" id="pagePlayer">
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div class="topnav-brand" onclick="goPage('home')"><div class="logo-mark">D</div><span>disco</span></div>
+      <div class="topnav-links">
+        <button class="topnav-link" onclick="goPage('home')">Home</button>
+        <button class="topnav-link" onclick="goPage('courses')">My Courses</button>
+        <button class="topnav-link active">Lesson</button>
+      </div>
+    </div>
+    <div class="topnav-right">
+      <button class="topnav-link" onclick="openAccessibility()" style="font-size:16px;padding:6px 10px">⚙️</button>
+      <div class="avatar">G</div>
+    </div>
+  </nav>
+
+  <div class="comp-strip">
+    <div class="cm"><span class="cm-label">Completion</span><div class="cm-track"><div class="cm-fill comp" id="cBar" style="width:0%"></div></div><span class="cm-val" id="cVal">0%</span></div>
+    <div class="cm"><span class="cm-label">Knowledge</span><div class="cm-track"><div class="cm-fill know" id="kBar" style="width:0%"></div></div><span class="cm-val" id="kVal">0%</span></div>
+    <div class="gap-badge" id="gBadge">Gap: —</div>
+  </div>
+
+  <div class="player-layout">
+    <div class="player-main">
+      <div class="vid-container anim"><div class="vid-ph"><div class="go"></div><div class="glow"></div>
+        <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+        <div class="vid-title">3.2 — Control Flow: Loops & Conditionals</div>
+      </div></div>
+      <div class="vpw anim d1"><div class="vpt" onclick="seekV(event)"><div class="vpf" id="vProg"></div></div><span class="vtime" id="vTime">0:00 / 0:20</span></div>
+      <div class="sic anim d2"><div class="sic-i">🎯</div><div><h3>Learning Objective</h3><p>Understand how <code>for</code> and <code>while</code> loops control repetition, and how <code>if/elif/else</code> enables conditional branching.</p></div></div>
+    </div>
+
+    <aside class="p-sidebar">
+      <div class="st-tabs">
+        <button class="st-tab active" onclick="switchTab('visual')" id="tVisual"><span class="ti">🧠</span>Visual</button>
+        <button class="st-tab" onclick="switchTab('readwrite')" id="tReadwrite"><span class="ti">📝</span>Read/Write</button>
+        <button class="st-tab" onclick="switchTab('auditory')" id="tAuditory"><span class="ti">🎧</span>Auditory</button>
+      </div>
+      <div class="sb-scroll">
+        <div class="ai-badge">AI-Generated Study Aid</div>
+        <div class="panel active" id="pVisual">
+          <div class="panel-t">Concept Map</div>
+          <div class="mm-wrap">
+            <svg viewBox="0 0 310 260" xmlns="http://www.w3.org/2000/svg">
+              <rect x="100" y="104" width="110" height="38" rx="11" fill="rgba(167,139,250,.15)" stroke="#A78BFA" stroke-width="1.2"/>
+              <text x="155" y="128" text-anchor="middle" fill="#c4b5fd" font-family="Outfit" font-size="11" font-weight="600">Control Flow</text>
+              <line x1="120" y1="104" x2="65" y2="54" stroke="rgba(167,139,250,.2)"/>
+              <rect x="10" y="30" width="110" height="40" rx="9" fill="#16141F" stroke="rgba(255,255,255,.06)"/>
+              <text x="65" y="47" text-anchor="middle" fill="#60A5FA" font-family="Outfit" font-size="10" font-weight="600">for loop</text>
+              <text x="65" y="61" text-anchor="middle" fill="#8E87A0" font-family="Outfit" font-size="8">iterate over sequence</text>
+              <line x1="190" y1="104" x2="245" y2="54" stroke="rgba(167,139,250,.2)"/>
+              <rect x="190" y="30" width="110" height="40" rx="9" fill="#16141F" stroke="rgba(255,255,255,.06)"/>
+              <text x="245" y="47" text-anchor="middle" fill="#34D399" font-family="Outfit" font-size="10" font-weight="600">while loop</text>
+              <text x="245" y="61" text-anchor="middle" fill="#8E87A0" font-family="Outfit" font-size="8">repeat until false</text>
+              <line x1="120" y1="142" x2="55" y2="192" stroke="rgba(167,139,250,.2)"/>
+              <rect x="0" y="178" width="110" height="40" rx="9" fill="#16141F" stroke="rgba(255,255,255,.06)"/>
+              <text x="55" y="195" text-anchor="middle" fill="#FBC02D" font-family="Outfit" font-size="10" font-weight="600">if / elif / else</text>
+              <text x="55" y="209" text-anchor="middle" fill="#8E87A0" font-family="Outfit" font-size="8">conditional branching</text>
+              <line x1="190" y1="142" x2="250" y2="192" stroke="rgba(167,139,250,.2)"/>
+              <rect x="195" y="178" width="110" height="40" rx="9" fill="#16141F" stroke="rgba(255,255,255,.06)"/>
+              <text x="250" y="195" text-anchor="middle" fill="#F472B6" font-family="Outfit" font-size="10" font-weight="600">break / continue</text>
+              <text x="250" y="209" text-anchor="middle" fill="#8E87A0" font-family="Outfit" font-size="8">loop control</text>
+            </svg>
+          </div>
+        </div>
+        <div class="panel" id="pReadwrite">
+          <div class="panel-t">Structured Notes</div>
+          <div class="nc"><h4>📌 For Loops</h4><p>A <span class="kt">for</span> loop iterates over a sequence. Use when you know the iteration count.</p></div>
+          <div class="nc"><h4>📌 While Loops</h4><p>A <span class="kt">while</span> loop repeats while condition is <span class="kt">True</span>. Risk: infinite loops.</p></div>
+          <div class="nc"><h4>📌 Conditionals</h4><p><span class="kt">if</span> checks boolean. Chain <span class="kt">elif</span>/<span class="kt">else</span>. Indentation matters.</p></div>
+          <div class="nc"><h4>📌 Loop Control</h4><p><span class="kt">break</span> exits loop. <span class="kt">continue</span> skips iteration.</p></div>
+        </div>
+        <div class="panel" id="pAuditory">
+          <div class="panel-t">Audio Summary</div>
+          <div class="ac">
+            <div class="a-waveform" id="aWave"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+            <button class="tts-btn" id="ttsBtn" onclick="toggleTTS()">▶ Play Audio</button>
+            <div class="a-transcript"><p>"<span class="hl">Control flow</span> gives Python the tools to make decisions and repeat. A <span class="hl">for loop</span> iterates over a sequence, a <span class="hl">while loop</span> runs until false. <span class="hl">Conditionals</span> let code branch."</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="mod-sections">
+        <h4>Sections</h4>
+        <div class="sec-list">
+          <div class="sec-item completed"><span class="sec-dot"></span>3.1 Variables & Types<span class="sec-time">4:12</span></div>
+          <div class="sec-item active"><span class="sec-dot"></span>3.2 Loops & Conditionals<span class="sec-time">6:30</span></div>
+          <div class="sec-item"><span class="sec-dot"></span>3.3 Functions<span class="sec-time">5:45</span></div>
+          <div class="sec-item"><span class="sec-dot"></span>3.4 Error Handling<span class="sec-time">4:58</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ═══════════════ IN-LESSON QUIZ OVERLAY ═══════════════ -->
+<div class="quiz-overlay" id="quizOv">
+  <div class="qc">
+    <div class="q-tag">Stop & Think — Knowledge Check</div>
+    <p class="q-question" id="qQ"></p>
+    <div class="q-options" id="qOpts"></div>
+    <div class="q-fb" id="qFb"></div>
+    <div class="conf-section" id="confSec">
+      <p class="conf-label">How well do you understand this concept?</p>
+      <div class="likert" id="likert">
+        <button class="lk-btn" onclick="selConf(1)"><span class="le">😵</span><span class="ln">1</span></button>
+        <button class="lk-btn" onclick="selConf(2)"><span class="le">😕</span><span class="ln">2</span></button>
+        <button class="lk-btn" onclick="selConf(3)"><span class="le">😐</span><span class="ln">3</span></button>
+        <button class="lk-btn" onclick="selConf(4)"><span class="le">🙂</span><span class="ln">4</span></button>
+        <button class="lk-btn" onclick="selConf(5)"><span class="le">🤩</span><span class="ln">5</span></button>
+      </div>
+      <div class="lk-hint"><span>Not at all</span><span>Very well</span></div>
+      <div class="rev-nudge" id="revNudge"><span class="ni">💡</span><span><strong>Targeted Review:</strong> This concept needs attention. Revisit the structured notes or audio summary before continuing.</span></div>
+    </div>
+    <button class="cont-btn" id="contBtn" onclick="closeQuiz()">Continue Learning →</button>
+  </div>
+</div>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+<script>
+/* ── PAGE NAVIGATION ── */
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const map = {
+    splash:'pageSplash', login:'pageLogin', signup:'pageSignup',
+    intro:'pageIntro', enroll:'pageEnroll',
+    styleIntro:'pageStyleSurvey', styleSurvey:'pageStyleSurvey',
+    styleVisual:'pageStyleVisual',
+    quiz1:'pageQuiz1', styleAuditory:'pageStyleAuditory', quiz2:'pageQuiz2',
+    styleReading:'pageStyleReading', quiz3:'pageQuiz3',
+    styleKinesthetic:'pageStyleKinesthetic', quiz4:'pageQuiz4',
+    styleResult:'pageStyleResult', home:'pageHome',
+    courses:'pageCourses', community:'pageCommunity',
+    player:'pagePlayer'
+  };
+  const el = document.getElementById(map[id]);
+  if (el) { el.classList.add('active'); }
+  window.scrollTo(0,0);
+}
+
+/* ── ONBOARDING INTERACTIONS ── */
+function toggleGoal(el) { el.classList.toggle('selected'); }
+function toggleEnroll(el) { el.classList.toggle('selected'); }
+
+/* ══════════════════════════════════════════
+   LEARNING STYLE SURVEY
+   5 behavioral questions — each answer maps
+   weighted points to one or more styles.
+   ══════════════════════════════════════════ */
+const surveyQuestions = [
+  {
+    q: "When learning something new, what do you naturally reach for first?",
+    icon: "🧭",
+    opts: [
+      { text: "Diagrams, charts, or videos", styles: { visual: 3 } },
+      { text: "Podcasts, lectures, or discussions", styles: { auditory: 3 } },
+      { text: "Textbooks, articles, or written guides", styles: { reading: 3 } },
+      { text: "Hands-on practice or trial and error", styles: { kinesthetic: 3 } }
+    ]
+  },
+  {
+    q: "You need to remember a complex process. Which strategy works best for you?",
+    icon: "💭",
+    opts: [
+      { text: "Drawing a flowchart or mind map", styles: { visual: 3 } },
+      { text: "Explaining it out loud to someone", styles: { auditory: 3 } },
+      { text: "Writing detailed step-by-step notes", styles: { reading: 3 } },
+      { text: "Walking through it physically or building a model", styles: { kinesthetic: 3 } }
+    ]
+  },
+  {
+    q: "You're stuck on a difficult concept. What helps you break through?",
+    icon: "🔓",
+    opts: [
+      { text: "Watching a YouTube tutorial or animation", styles: { visual: 2, auditory: 1 } },
+      { text: "Talking it through with a peer or tutor", styles: { auditory: 3 } },
+      { text: "Re-reading the material or looking up documentation", styles: { reading: 3 } },
+      { text: "Experimenting with code, simulations, or real examples", styles: { kinesthetic: 3 } }
+    ]
+  },
+  {
+    q: "Which classroom setting would help you learn best?",
+    icon: "🏫",
+    opts: [
+      { text: "Slides with rich visuals, infographics, and color coding", styles: { visual: 3 } },
+      { text: "An engaging lecturer who tells stories and explains verbally", styles: { auditory: 3 } },
+      { text: "Well-structured handouts and reading material to review", styles: { reading: 3 } },
+      { text: "Lab sessions, workshops, or group activities", styles: { kinesthetic: 3 } }
+    ]
+  },
+  {
+    q: "When preparing for an exam, you'd most likely:",
+    icon: "📝",
+    opts: [
+      { text: "Review diagrams, re-watch recorded lectures, or use color-coded highlights", styles: { visual: 2, reading: 1 } },
+      { text: "Record yourself explaining topics and listen back", styles: { auditory: 3 } },
+      { text: "Re-write notes, make summaries, or create flashcards", styles: { reading: 2, visual: 1 } },
+      { text: "Solve practice problems and do mock exercises", styles: { kinesthetic: 3 } }
+    ]
+  }
+];
+
+let currentSurveyQ = 0;
+const surveyAnswers = []; // stores which option index was selected per question
+const styleScores = { visual: 0, auditory: 0, reading: 0, kinesthetic: 0 };
+
+function initSurvey() {
+  currentSurveyQ = 0;
+  Object.keys(styleScores).forEach(k => styleScores[k] = 0);
+  surveyAnswers.length = 0;
+  renderSurveyQ();
+}
+
+function renderSurveyQ() {
+  const q = surveyQuestions[currentSurveyQ];
+  const container = document.getElementById('surveyQContainer');
+  const letters = ['A','B','C','D'];
+
+  container.innerHTML = `
+    <div style="font-size:42px;margin-bottom:10px;animation:float 2.5s ease-in-out infinite">${q.icon}</div>
+    <h2 class="card-title" style="font-size:1.2rem;margin-bottom:20px">${q.q}</h2>
+    <div class="qp-opts" id="surveyOpts">
+      ${q.opts.map((o, i) => `
+        <div class="qp-opt" onclick="selectSurveyOpt(${i})">
+          <span class="qp-letter">${letters[i]}</span>${o.text}
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('surveyProgress').textContent = `Question ${currentSurveyQ + 1} of ${surveyQuestions.length}`;
+  document.getElementById('surveyBar').style.width = ((currentSurveyQ + 1) / surveyQuestions.length * 100) + '%';
+  document.getElementById('surveyNextBtn').disabled = true;
+
+  // Update button text for last question
+  document.getElementById('surveyNextBtn').textContent =
+    currentSurveyQ === surveyQuestions.length - 1 ? 'See My Results →' : 'Next →';
+}
+
+function selectSurveyOpt(idx) {
+  document.querySelectorAll('#surveyOpts .qp-opt').forEach((o, i) => {
+    o.classList.toggle('selected', i === idx);
+  });
+  surveyAnswers[currentSurveyQ] = idx;
+  document.getElementById('surveyNextBtn').disabled = false;
+}
+
+function nextSurveyQ() {
+  // Record the score from this answer
+  const q = surveyQuestions[currentSurveyQ];
+  const chosenIdx = surveyAnswers[currentSurveyQ];
+  const chosen = q.opts[chosenIdx];
+  Object.entries(chosen.styles).forEach(([style, pts]) => {
+    styleScores[style] += pts;
+  });
+
+  currentSurveyQ++;
+  if (currentSurveyQ >= surveyQuestions.length) {
+    // Done — compute results and go to result page
+    renderStyleResults();
+    goPage('styleResult');
+  } else {
+    renderSurveyQ();
+  }
+}
+
+// Initialize survey when page loads
+document.addEventListener('DOMContentLoaded', () => { initSurvey(); });
+
+/* ── STYLE RESULT RENDERING ── */
+function renderStyleResults() {
+  const configs = [
+    { key:'visual', label:'👁️ Visual', name:'Visual', gradient:'linear-gradient(90deg,var(--violet-deep),var(--violet))', color:'var(--violet)' },
+    { key:'auditory', label:'🎧 Auditory', name:'Auditory', gradient:'linear-gradient(90deg,var(--sky),#93c5fd)', color:'var(--sky)' },
+    { key:'reading', label:'📖 Read/Write', name:'Read/Write', gradient:'linear-gradient(90deg,var(--emerald),#6ee7b7)', color:'var(--emerald)' },
+    { key:'kinesthetic', label:'🤲 Kinesthetic', name:'Kinesthetic', gradient:'linear-gradient(90deg,var(--coral),#fdba74)', color:'var(--coral)' }
+  ];
+
+  // Max possible score is 15 (5 questions × 3 max pts each)
+  const maxScore = 15;
+
+  const sorted = [...configs].sort((a, b) => styleScores[b.key] - styleScores[a.key]);
+  const primary = sorted[0];
+
+  const barsEl = document.getElementById('resultBars');
+  barsEl.innerHTML = '';
+  configs.forEach((c, i) => {
+    const pct = Math.round((styleScores[c.key] / maxScore) * 100);
+    const isPrimary = c.key === primary.key;
+    barsEl.innerHTML += `
+      <div class="result-bar-row" style="${isPrimary ? 'background:rgba(255,255,255,.02);border-radius:8px;padding:6px 8px;margin:0 -8px' : ''}">
+        <span class="result-bar-label">${c.label}${isPrimary ? ' ★' : ''}</span>
+        <div class="result-bar-track"><div class="result-bar-fill" style="width:${pct}%;background:${c.gradient};animation-delay:${i * 0.12 + 0.1}s"></div></div>
+        <span class="result-bar-val" style="color:${c.color}">${pct}%</span>
+      </div>`;
+  });
+
+  // Highlight the override button for the primary
+  document.querySelectorAll('#overrideBtns .pill').forEach(btn => {
+    btn.classList.toggle('selected', btn.textContent.trim().toLowerCase().includes(primary.name.toLowerCase().split('/')[0]));
+  });
+
+  const styleDescriptions = {
+    visual: "You process information best through diagrams, mind maps, and spatial layouts. We'll prioritize visual study aids and concept maps in your courses.",
+    auditory: "You absorb information most effectively through listening and spoken explanations. We'll prioritize audio summaries and text-to-speech in your courses.",
+    reading: "You retain information best through reading and writing. We'll prioritize structured notes and detailed text content in your courses.",
+    kinesthetic: "You learn best through hands-on interaction and practice. We'll prioritize interactive exercises and simulations in your courses."
+  };
+
+  const icons = { visual: '👁️', auditory: '🎧', reading: '📖', kinesthetic: '🤲' };
+  document.getElementById('resultIcon').textContent = icons[primary.key];
+  document.getElementById('resultSummary').innerHTML =
+    `<strong style="color:${primary.color}">Primary: ${primary.name} learner.</strong> ${styleDescriptions[primary.key]}`;
+}
+
+/* ── OVERRIDE LEARNING STYLE ── */
+function overrideStyle(styleName) {
+  // Reset scores and set the chosen one to max
+  Object.keys(styleScores).forEach(k => styleScores[k] = 2);
+  styleScores[styleName] = 15;
+
+  // Update pill selection
+  const names = { visual: 'Visual', auditory: 'Auditory', reading: 'Read/Write', kinesthetic: 'Kinesthetic' };
+  document.querySelectorAll('#overrideBtns .pill').forEach(btn => {
+    btn.classList.toggle('selected', btn.textContent.trim().toLowerCase().includes(names[styleName].toLowerCase().split('/')[0]));
+  });
+
+  renderStyleResults();
+}
+
+/* ── LESSON PLAYER ── */
+let isPlaying=false, curTime=0, interval=null;
+const totTime=20;
+let compPct=0, knowPct=0, quizIdx=0, qAnswered=false, confSel=false, ttsOn=false;
+
+const quizzes=[
+  {time:5,q:"Which Python loop is best when you know exactly how many times to iterate?",opts:[{t:"while loop",c:false},{t:"for loop",c:true},{t:"do-while loop",c:false},{t:"repeat loop",c:false}],yFb:"Correct! A for loop iterates over a known sequence.",nFb:"Not quite. A for loop is ideal when you know the iteration count."},
+  {time:13,q:"What happens if a while loop's condition never becomes False?",opts:[{t:"Exits after 1000 iterations",c:false},{t:"Python stops it automatically",c:false},{t:"Creates an infinite loop",c:true},{t:"Raises a SyntaxError",c:false}],yFb:"Right! An infinite loop runs forever unless stopped.",nFb:"Not quite. If the condition stays True, it loops forever — an infinite loop."}
+];
+
+function togglePlay(){
+  isPlaying=!isPlaying;
+  const b=document.getElementById('playBtn');
+  if(isPlaying){b.textContent='⏸';b.classList.add('playing');interval=setInterval(tick,1000)}
+  else{b.textContent='▶';b.classList.remove('playing');clearInterval(interval)}
+}
+
+function tick(){
+  if(curTime>=totTime){isPlaying=false;clearInterval(interval);document.getElementById('playBtn').textContent='▶';document.getElementById('playBtn').classList.remove('playing');return}
+  curTime++;updateVid();
+  for(let i=0;i<quizzes.length;i++){if(curTime===quizzes[i].time&&quizIdx<=i){quizIdx=i;trigQuiz(i);break}}
+}
+
+function updateVid(){
+  const p=(curTime/totTime)*100;
+  document.getElementById('vProg').style.width=p+'%';
+  const m=Math.floor(curTime/60),s=String(curTime%60).padStart(2,'0');
+  document.getElementById('vTime').textContent=`${m}:${s} / 0:20`;
+  compPct=Math.round(p);updateMetrics();
+}
+
+function seekV(e){const r=e.currentTarget.getBoundingClientRect();curTime=Math.round(((e.clientX-r.left)/r.width)*totTime);updateVid()}
+
+function trigQuiz(i){
+  isPlaying=false;clearInterval(interval);
+  document.getElementById('playBtn').textContent='▶';document.getElementById('playBtn').classList.remove('playing');
+  const q=quizzes[i];qAnswered=false;confSel=false;
+  document.getElementById('qQ').textContent=q.q;
+  const oel=document.getElementById('qOpts');oel.innerHTML='';
+  ['A','B','C','D'].forEach((l,j)=>{if(!q.opts[j])return;const d=document.createElement('div');d.className='q-opt';d.innerHTML=`<span class="ol">${l}</span><span>${q.opts[j].t}</span>`;d.addEventListener('click',()=>ansQ(d,q.opts[j].c,i));oel.appendChild(d)});
+  document.getElementById('qFb').className='q-fb';document.getElementById('qFb').textContent='';
+  document.getElementById('confSec').classList.remove('visible');document.getElementById('revNudge').classList.remove('visible');document.getElementById('contBtn').classList.remove('enabled');
+  const ov=document.getElementById('quizOv');ov.style.display='flex';requestAnimationFrame(()=>ov.classList.add('visible'));
+}
+
+function ansQ(el,correct,i){
+  if(qAnswered)return;qAnswered=true;
+  const q=quizzes[i],all=document.querySelectorAll('.q-opt');all.forEach(o=>o.classList.add('disabled'));
+  const fb=document.getElementById('qFb');
+  if(correct){el.classList.add('correct');fb.className='q-fb correct';fb.textContent=q.yFb;knowPct=Math.min(100,knowPct+25)}
+  else{el.classList.add('wrong');all.forEach((o,j)=>{if(q.opts[j]&&q.opts[j].c)o.classList.add('correct')});fb.className='q-fb wrong';fb.textContent=q.nFb;knowPct=Math.min(100,knowPct+5)}
+  updateMetrics();document.getElementById('confSec').classList.add('visible');
+}
+
+function selConf(lv){
+  confSel=true;document.querySelectorAll('.lk-btn').forEach((b,i)=>b.classList.toggle('selected',i===lv-1));
+  document.getElementById('revNudge').classList.toggle('visible',lv<=2);
+  document.getElementById('contBtn').classList.add('enabled');
+}
+
+function closeQuiz(){
+  if(!confSel)return;const ov=document.getElementById('quizOv');ov.classList.remove('visible');setTimeout(()=>{ov.style.display='none'},350);quizIdx++;
+}
+
+function updateMetrics(){
+  document.getElementById('cBar').style.width=compPct+'%';document.getElementById('cVal').textContent=compPct+'%';
+  document.getElementById('kBar').style.width=knowPct+'%';document.getElementById('kVal').textContent=knowPct+'%';
+  const g=compPct-knowPct,b=document.getElementById('gBadge');
+  if(!compPct&&!knowPct){b.textContent='Gap: —';b.className='gap-badge'}
+  else if(g<=10){b.textContent='On Track ✓';b.className='gap-badge good'}
+  else{b.textContent=`Gap: ${g}%`;b.className='gap-badge'}
+}
+
+function switchTab(s){
+  document.querySelectorAll('.st-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('t'+s.charAt(0).toUpperCase()+s.slice(1)).classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p'+s.charAt(0).toUpperCase()+s.slice(1)).classList.add('active');
+}
+
+function toggleTTS(){
+  ttsOn=!ttsOn;document.getElementById('ttsBtn').textContent=ttsOn?'⏸ Pause':'▶ Play Audio';
+  document.getElementById('aWave').classList.toggle('playing',ttsOn);
+}
+
+/* ══════════════════════════════════════════
+   QUIZ BATTLE SYSTEM
+   ══════════════════════════════════════════ */
+let selectedOpp = null;
+let battleQIdx = 0;
+let yourBattleScore = 0;
+let oppBattleScore = 0;
+let battleAnswered = false;
+let playerTotalScore = 840; // starting leaderboard score
+
+const battleQuestions = [
+  { q:"What does the 'len()' function return in Python?", opts:["The largest element","The number of items","The last index","The data type"], correct:1 },
+  { q:"Which keyword starts a function definition in Python?", opts:["function","func","def","define"], correct:2 },
+  { q:"What is the output of: print(type([]))?", opts:["<class 'tuple'>","<class 'list'>","<class 'dict'>","<class 'set'>"], correct:1 }
+];
+
+function selectOpponent(el, name) {
+  document.querySelectorAll('.battle-opp').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedOpp = name;
+  document.getElementById('battleStartBtn').disabled = false;
+}
+
+function startBattle() {
+  if (!selectedOpp) return;
+  document.getElementById('battleIdle').style.display = 'none';
+  document.getElementById('battleActive').style.display = 'block';
+  document.getElementById('battleResult').style.display = 'none';
+  battleQIdx = 0; yourBattleScore = 0; oppBattleScore = 0;
+  document.getElementById('yourScore').textContent = '0';
+  document.getElementById('oppScore').textContent = '0';
+  document.getElementById('oppNameDisplay').textContent = selectedOpp.split(' ')[0];
+  document.getElementById('oppAvatar').textContent = selectedOpp.charAt(0);
+  renderBattleQ();
+}
+
+function renderBattleQ() {
+  const q = battleQuestions[battleQIdx];
+  document.getElementById('battleProgressText').textContent = `Question ${battleQIdx + 1} of ${battleQuestions.length}`;
+  const letters = ['A','B','C','D'];
+  document.getElementById('battleQContainer').innerHTML = `
+    <p style="font-family:var(--font-display);font-size:.95rem;font-weight:500;margin-bottom:14px;text-align:center">${q.q}</p>
+    <div class="qp-opts" id="battleOpts">
+      ${q.opts.map((o,i) => `<div class="qp-opt" onclick="selectBattleOpt(${i})"><span class="qp-letter">${letters[i]}</span>${o}</div>`).join('')}
+    </div>`;
+  battleAnswered = false;
+  document.getElementById('battleSubmitBtn').disabled = true;
+}
+
+function selectBattleOpt(idx) {
+  if (battleAnswered) return;
+  document.querySelectorAll('#battleOpts .qp-opt').forEach((o,i) => o.classList.toggle('selected', i === idx));
+  document.getElementById('battleSubmitBtn').disabled = false;
+}
+
+function submitBattleAnswer() {
+  if (battleAnswered) return;
+  battleAnswered = true;
+  const q = battleQuestions[battleQIdx];
+  const selected = document.querySelector('#battleOpts .qp-opt.selected');
+  const selectedIdx = [...document.querySelectorAll('#battleOpts .qp-opt')].indexOf(selected);
+  const allOpts = document.querySelectorAll('#battleOpts .qp-opt');
+  allOpts.forEach(o => o.classList.add('disabled'));
+
+  // Your answer
+  if (selectedIdx === q.correct) {
+    selected.classList.add('correct');
+    yourBattleScore++;
+  } else {
+    selected.classList.add('wrong');
+    allOpts[q.correct].classList.add('correct');
+  }
+
+  // Simulate opponent answer (70% chance correct)
+  if (Math.random() < 0.7) oppBattleScore++;
+
+  document.getElementById('yourScore').textContent = yourBattleScore;
+  document.getElementById('oppScore').textContent = oppBattleScore;
+
+  // After short delay, advance
+  setTimeout(() => {
+    battleQIdx++;
+    if (battleQIdx >= battleQuestions.length) {
+      showBattleResult();
+    } else {
+      renderBattleQ();
+    }
+  }, 1200);
+}
+
+function showBattleResult() {
+  document.getElementById('battleActive').style.display = 'none';
+  document.getElementById('battleResult').style.display = 'block';
+
+  const won = yourBattleScore > oppBattleScore;
+  const tied = yourBattleScore === oppBattleScore;
+
+  document.getElementById('battleResultIcon').textContent = won ? '🏆' : tied ? '🤝' : '😤';
+  document.getElementById('battleResultTitle').textContent = won ? 'Victory!' : tied ? 'It\'s a Draw!' : 'Defeat!';
+  document.getElementById('battleResultDesc').textContent = won
+    ? `You beat ${selectedOpp}! +15 points added to your score.`
+    : tied ? `Evenly matched with ${selectedOpp}. +5 points each.`
+    : `${selectedOpp} wins this time. Keep practicing!`;
+
+  // Update leaderboard score
+  if (won) playerTotalScore += 15;
+  else if (tied) playerTotalScore += 5;
+  else playerTotalScore += 2;
+  document.getElementById('lbYourScore').textContent = playerTotalScore + ' pts';
+
+  document.getElementById('battleFinalScores').innerHTML = `
+    <div class="battle-final-p"><div class="bfp-name">You</div><div class="bfp-score" style="color:${won?'var(--emerald)':'var(--text-primary)'}">${yourBattleScore}</div></div>
+    <div style="font-size:1.2rem;color:var(--text-muted);align-self:center">—</div>
+    <div class="battle-final-p"><div class="bfp-name">${selectedOpp}</div><div class="bfp-score" style="color:${!won&&!tied?'var(--emerald)':'var(--text-primary)'}">${oppBattleScore}</div></div>`;
+
+  // Add to activity feed
+  const feed = document.getElementById('activityFeed');
+  const resultText = won ? `won a Quiz Battle against <strong>${selectedOpp}</strong> (${yourBattleScore}–${oppBattleScore})` : tied ? `drew with <strong>${selectedOpp}</strong>` : `lost a close Quiz Battle to <strong>${selectedOpp}</strong>`;
+  const newItem = document.createElement('div');
+  newItem.className = 'feed-item';
+  newItem.style.animation = 'fadeUp .4s var(--ease-out)';
+  newItem.innerHTML = `<div class="lb-av" style="background:linear-gradient(135deg,#FB923C,#F472B6);width:28px;height:28px;font-size:10px;flex-shrink:0">G</div><div class="feed-content"><strong>You</strong> ${resultText}.<span class="feed-time">Just now</span></div>`;
+  feed.insertBefore(newItem, feed.firstChild);
+}
+
+function resetBattle() {
+  document.getElementById('battleIdle').style.display = 'block';
+  document.getElementById('battleActive').style.display = 'none';
+  document.getElementById('battleResult').style.display = 'none';
+  document.querySelectorAll('.battle-opp').forEach(o => o.classList.remove('selected'));
+  document.getElementById('battleStartBtn').disabled = true;
+  selectedOpp = null;
+}
+
+/* ══════════════════════════════════════════
+   ACCESSIBILITY SETTINGS
+   ══════════════════════════════════════════ */
+function openAccessibility() {
+  document.getElementById('a11yOverlay').classList.add('visible');
+}
+function closeAccessibility() {
+  document.getElementById('a11yOverlay').classList.remove('visible');
+}
+
+function setFontSize(btn, scale) {
+  btn.parentElement.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.documentElement.style.fontSize = (scale * 16) + 'px';
+}
+
+function setFontWeight(btn, weight) {
+  btn.parentElement.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.body.style.fontWeight = weight === 'bold' ? '500' : '';
+}
+
+function setLineSpacing(btn, spacing) {
+  btn.parentElement.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.body.style.lineHeight = spacing;
+}
+
+function setColorMode(btn, mode) {
+  btn.parentElement.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.body.classList.remove('cb-deuteranopia','cb-protanopia','cb-tritanopia');
+  if (mode !== 'none') document.body.classList.add('cb-' + mode);
+}
+
+function setTheme(btn, theme) {
+  btn.parentElement.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.body.classList.remove('theme-high-contrast');
+  if (theme === 'high-contrast') document.body.classList.add('theme-high-contrast');
+}
+
+function resetAccessibility() {
+  document.documentElement.style.fontSize = '';
+  document.body.style.fontWeight = '';
+  document.body.style.lineHeight = '';
+  document.body.classList.remove('cb-deuteranopia','cb-protanopia','cb-tritanopia','theme-high-contrast');
+  document.querySelectorAll('.a11y-opt').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.a11y-group').forEach(g => {
+    const first = g.querySelector('.a11y-opt');
+    if (first) first.classList.add('active');
+  });
+}
+
+/* ══════════════════════════════════════════
+   OFFLINE MODE
+   ══════════════════════════════════════════ */
+function toggleOffline(el) {
+  if (el.classList.contains('downloaded')) {
+    el.classList.remove('downloaded');
+    el.textContent = 'Download for offline';
+  } else {
+    el.textContent = 'Downloading...';
+    el.style.pointerEvents = 'none';
+    setTimeout(() => {
+      el.classList.add('downloaded');
+      el.textContent = '✓ Available offline';
+      el.style.pointerEvents = '';
+    }, 1500);
+  }
+}
+</script>
+
+<!-- SVG filters for color-blind simulation -->
+<svg style="position:absolute;width:0;height:0">
+  <defs>
+    <filter id="deuteranopia-filter">
+      <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/>
+    </filter>
+    <filter id="protanopia-filter">
+      <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/>
+    </filter>
+    <filter id="tritanopia-filter">
+      <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/>
+    </filter>
+  </defs>
+</svg>
+</body>
+</html>
